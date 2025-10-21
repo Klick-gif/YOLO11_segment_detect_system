@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; }
+        input, select { padding: 5px; margin: 5px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>系统调试页面</h1>
+    
+    <div class="section">
+        <h2>1. 上传图片</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="uploadFile()">上传</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. 测试预测 (JSON)</h2>
+        <input type="text" id="fileId" placeholder="文件ID">
+        <select id="modelType">
+            <option value="detect">检测模型</option>
+            <option value="segment">分割模型</option>
+        </select>
+        <input type="number" id="confidence" value="0.25" step="0.05" min="0.1" max="0.9">
+        <button onclick="testPredictJson()">测试JSON预测</button>
+        <div id="jsonResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. 测试预测 (Form)</h2>
+        <input type="text" id="fileIdForm" placeholder="文件ID">
+        <select id="modelTypeForm">
+            <option value="detect">检测模型</option>
+            <option value="segment">分割模型</option>
+        </select>
+        <input type="number" id="confidenceForm" value="0.25" step="0.05" min="0.1" max="0.9">
+        <button onclick="testPredictForm()">测试Form预测</button>
+        <div id="formResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. 检查文件</h2>
+        <button onclick="checkFiles()">检查上传文件</button>
+        <div id="filesResult" class="result"></div>
+    </div>
+
+    <script>
+        let currentFileId = null;
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('uploadResult').innerHTML = '请选择文件';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('uploadResult').innerHTML = 
+                    `状态: ${response.status}<br>结果: ${JSON.stringify(result, null, 2)}`;
+                
+                if (response.ok) {
+                    currentFileId = result.file_id;
+                    document.getElementById('fileId').value = result.file_id;
+                    document.getElementById('fileIdForm').value = result.file_id;
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = `错误: ${error.message}`;
+            }
+        }
+
+        async function testPredictJson() {
+            const fileId = document.getElementById('fileId').value;
+            const modelType = document.getElementById('modelType').value;
+            const confidence = parseFloat(document.getElementById('confidence').value);
+            
+            if (!fileId) {
+                document.getElementById('jsonResult').innerHTML = '请输入文件ID';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file_id: fileId,
+                        model_type: modelType,
+                        confidence: confidence
+                    })
+                });
+                
+                const result = await response.json();
+                document.getElementById('jsonResult').innerHTML = 
+                    `状态: ${response.status}<br>结果: ${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                document.getElementById('jsonResult').innerHTML = `错误: ${error.message}`;
+            }
+        }
+
+        async function testPredictForm() {
+            const fileId = document.getElementById('fileIdForm').value;
+            const modelType = document.getElementById('modelTypeForm').value;
+            const confidence = parseFloat(document.getElementById('confidenceForm').value);
+            
+            if (!fileId) {
+                document.getElementById('formResult').innerHTML = '请输入文件ID';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file_id', fileId);
+            formData.append('model_type', modelType);
+            formData.append('confidence', confidence.toString());
+            
+            try {
+                const response = await fetch('/test-predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('formResult').innerHTML = 
+                    `状态: ${response.status}<br>结果: ${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                document.getElementById('formResult').innerHTML = `错误: ${error.message}`;
+            }
+        }
+
+        async function checkFiles() {
+            try {
+                const response = await fetch('/check-files');
+                const result = await response.json();
+                document.getElementById('filesResult').innerHTML = 
+                    `状态: ${response.status}<br>结果: ${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                document.getElementById('filesResult').innerHTML = `错误: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
