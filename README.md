@@ -105,11 +105,9 @@ GET /download_original/{file_id}
 - **下载功能**: 支持结果图片和原始图片下载
 
 ### 车辆淹没部位类别
+- 车窗
+- 车门  
 - 车轮
-- 车身  
-- 车顶
-- 引擎盖
-- 后备箱
 
 ## ⚙️ 配置说明
 
@@ -148,7 +146,7 @@ VEHICLE_PARTS = {
 - **AI模型**: YOLO11 (Ultralytics)
 - **图像处理**: OpenCV, Pillow
 - **前端**: HTML5, CSS3, JavaScript
-- **部署**: Python 3.8+
+- **部署**: Python 3.11
 
 ## 📝 使用说明
 
